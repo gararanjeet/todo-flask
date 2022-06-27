@@ -1,6 +1,7 @@
 from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_marshmallow import Marshmallow
+import os
 
 app = Flask(__name__)
 
@@ -8,13 +9,8 @@ db = SQLAlchemy(app)
 
 ma = Marshmallow(app)
 
-# Connection credentials
-db_user = 'root'
-db_pass = '1234'
-db_name = 'flask'
-
 # configuring database uri
-app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:1234@localhost/flask"
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("SQLALCHEMY_DATABASE_URI")
 
 # Model
 class Tasks(db.Model):
