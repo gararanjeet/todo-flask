@@ -1,46 +1,10 @@
-from flask import Flask, jsonify, request
-from flask_sqlalchemy import SQLAlchemy
-from flask_marshmallow import Marshmallow
-import os
+from flask import Blueprint
+from ..extensions import db
+from ..models.tasks import task_schema, tasks_schema, Tasks
 
-app = Flask(__name__)
+main = Blueprint("main", __name__)
 
-db = SQLAlchemy(app)
-
-ma = Marshmallow(app)
-
-# configuring database uri
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("SQLALCHEMY_DATABASE_URI")
-
-# Model
-class Tasks(db.Model):
-    id = db.Column(db.Integer, primary_key = True)
-    task = db.Column(db.String(250))
-    isCompleted = db.Column(db.Boolean, default = False)
-    isImportant = db.Column(db.Boolean, default = False)
-
-    def __init__(self, task, isCompleted = False, isImportant = False):
-        self.task = task
-        self.isCompleted = isCompleted
-        self.isImportant = isImportant
-
-# Schema
-class TasksSchema(ma.Schema):
-    class Meta:
-        fields = ("id", "task", "isCompleted", "isImportant")
-
-# Init Schemas
-task_schema = TasksSchema()
-tasks_schema = TasksSchema(many=True)
-
-# get all tasks
-@app.route("/")
-def getTasks():
-    tasks = Tasks.query.all()
-    return tasks_schema.jsonify(tasks)
-
-# add new task
-@app.route("/addTask", methods=["POST"])
+@main.route("/addTask", methods=["POST"])
 def addTask():
     task = request.json.get('task')
     isImportant = request.json.get('isImportant')
@@ -51,7 +15,7 @@ def addTask():
     return task_schema.jsonify(new_task)
 
 # update description of the task
-@app.route("/modifyTask", methods=['PUT'])
+@main.route("/modifyTask", methods=['PUT'])
 def modifyTask():
     id = request.json.get("id")
     newTask = request.json.get("newTask")
@@ -67,7 +31,7 @@ def modifyTask():
         
 
 # toggle isImportant flag
-@app.route("/toggleImportant", methods=["PUT"])
+@main.route("/toggleImportant", methods=["PUT"])
 def toggleImportant():
     id = request.json.get("id")
     if id == None:
@@ -78,7 +42,7 @@ def toggleImportant():
     return jsonify({"message": "success"})
 
 # toggle isCompleted flag
-@app.route("/toggleComplete", methods=["PUT"])
+@main.route("/toggleComplete", methods=["PUT"])
 def toggleComplete():
     id = request.json.get("id")
     if id == None:
@@ -89,7 +53,7 @@ def toggleComplete():
     return jsonify({"message":"success"})
 
 # delete task
-@app.route("/deleteTask", methods=["DELETE"])
+@main.route("/deleteTask", methods=["DELETE"])
 def deleteTask():
     id = request.json.get("id")
     if id == None:
@@ -97,7 +61,3 @@ def deleteTask():
     task = Tasks.query.filter_by(id=id).delete()
     db.session.commit()
     return jsonify({"message":"success"})
-    
-
-if __name__ == "main":
-    app.run(debug=True)
